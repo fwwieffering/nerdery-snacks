@@ -15,3 +15,4 @@ clean:
 	find . -name __pycache__ -type d -delete
 	rm -rf snacks.egg-info
 	rm -rf .pytest_cache
+	docker-compose down

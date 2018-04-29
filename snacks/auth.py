@@ -28,7 +28,7 @@ def validate_token(token: str) -> bool:
             token,
             properties.secret_key,
         )
-        return decoded["userid"]
+        return decoded
     except jwt.exceptions.ExpiredSignatureError:
         return False
     except jwt.exceptions.DecodeError:

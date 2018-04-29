@@ -10,7 +10,7 @@ def test_round_trip_token():
     token = generate_token('test_user')
     print(token)
     decoded_token = validate_token(token)
-    assert decoded_token == "test_user"
+    assert decoded_token["userid"] == "test_user"
 
 
 def test_bad_token():

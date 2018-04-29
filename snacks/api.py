@@ -3,6 +3,7 @@ import json
 
 from snacks.controllers.users import create_user, verify_user_password
 from snacks.controllers.snacks import get_snacks, add_snack
+from snacks.controllers.votes import add_vote
 from snacks.models.snacks import Snack
 from snacks.errors import (
     UserAlreadyExistsException,
@@ -12,6 +13,8 @@ from snacks.errors import (
     ApiNotAvailableException,
     VotesExceededException
 )
+from snacks import properties
+from snacks import SnackEncoder
 from snacks.auth import validate_token, generate_token
 
 
@@ -40,7 +43,6 @@ class AuthMiddleware(object):
     ]
 
     def process_resource(self, req, resp, resource, params):
-        print(req.path)
         if req.path not in self.blacklist_auth and req.method != "OPTIONS":
             if req.auth:
                 token = req.auth.split("Bearer ")[-1]
@@ -120,7 +122,7 @@ class LoginResource(object):
                 })
                 return
 
-            token = generate_token(user["username"])
+            token = generate_token(valid)
             resp.body = json.dumps({"status": "ok", "data": {"token": token}})
 
         except UserNotFoundException:
@@ -145,16 +147,16 @@ class SnacksResource(object):
             resp.body = json.dumps({
                 "status": "ok",
                 "data": snacks
-            })
+            }, cls=SnackEncoder)
         except ApiNotAvailableException:
-            resp.status_code = falcon.HTTP_503
+            resp.status = falcon.HTTP_503
             resp.body = json.dumps({
                 "status": "error",
                 "error": "Snacks API is unavailable. Try again later"
             })
 
         except AuthorizationError:
-            resp.status_code = falcon.HTTP_503
+            resp.status = falcon.HTTP_503
             resp.body = json.dumps({
                 "status": "error",
                 "error": [
@@ -185,7 +187,7 @@ class SnacksResource(object):
             })
 
         except AuthorizationError:
-            resp.status_code = falcon.HTTP_503
+            resp.status = falcon.HTTP_503
             resp.body = json.dumps({
                 "status": "error",
                 "error": [
@@ -195,7 +197,7 @@ class SnacksResource(object):
             })
 
         except BadRequestError as e:
-            resp.status_code = falcon.HTTP_400
+            resp.status = falcon.HTTP_400
             resp.body = json.dumps({
                 "status": "error",
                 "error": str(e)
@@ -211,7 +213,7 @@ class VoteResource(object):
         vote = req.media
 
         if not vote or not vote.get("snack_id"):
-            resp.status_code = falcon.HTTP_400
+            resp.status = falcon.HTTP_400
             resp.body = json.dumps({
                 "status": "error",
                 "error": "json body containing 'snack_id' is required"
@@ -231,9 +233,8 @@ class VoteResource(object):
                     "remaining_votes": remaining_votes
                 }
             })
-
         except VotesExceededException:
-            resp.status_code = falcon.HTTP_400
+            resp.status = falcon.HTTP_400
             resp.body = json.dumps({
                 "status": "error",
                 "error": "Maximum votes for period exceeded"

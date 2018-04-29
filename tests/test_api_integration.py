@@ -2,6 +2,7 @@ import requests
 import json
 
 from snacks.db import Base, engine, Session
+from snacks import properties
 
 
 def setup_module():
@@ -58,3 +59,56 @@ def test_login_integration():
     body = res.json()
     assert res.status_code == 401
     assert body["error"] == "user: bad user does not exist"
+
+
+def test_create_vote_on_snack():
+    res = requests.post(
+        "http://localhost:5050/login",
+        data=json.dumps({"username": "integration_user", "password": "something"})
+    )
+    token = res.json()["data"]["token"]
+
+    # same snack from other tests
+    res = requests.post(
+        "http://localhost:5050/snacks",
+        headers={"Authorization": "Bearer {}".format(token)},
+        data=json.dumps({"name": "fruit by the foot", "location": "super america"})
+    )
+
+    #snack could already exist. If so, expect error message
+    if res.status_code == 400:
+        error = res.json()["error"]
+        assert error == "{'message': 'The snack already exists.'}"
+
+    else:
+        assert res.status_code == 200
+
+    # get snack id
+    res = requests.get(
+        "http://localhost:5050/snacks",
+        headers={"Authorization": "Bearer {}".format(token)}
+    )
+    snacks = res.json()["data"]
+
+    fruit_snacks = [x for x in snacks if x["name"] == "fruit by the foot"][0]
+    # vote for the snack
+    # consume allowed votes
+    for i in range(properties.max_votes):
+        res = requests.post(
+            "http://localhost:5050/vote",
+            headers={"Authorization": "Bearer {}".format(token)},
+            data=json.dumps({"snack_id": fruit_snacks["id"]})
+        )
+        assert res.ok
+        remaining_votes = res.json()["data"]["remaining_votes"]
+    # hit max votes
+    bad_res = requests.post(
+        "http://localhost:5050/vote",
+        headers={"Authorization": "Bearer {}".format(token)},
+        data=json.dumps({"snack_id": fruit_snacks["id"]})
+    )
+    body = bad_res.json()
+    print(body)
+    assert bad_res.status_code == 400
+    error = body["error"]
+    assert error == "Maximum votes for period exceeded"

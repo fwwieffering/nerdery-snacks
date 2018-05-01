@@ -51,30 +51,32 @@ def test_create_snack():
         pass
 
     snacks = get_snacks()
-    my_snack = [x.name == "fruit by the foot" for x in snacks]
+
+    my_snack = [x for x in snacks["suggestedCurrent"] if x["name"] == "fruit by the foot" ]
     assert len(my_snack) > 0
+    assert my_snack[0]["suggestionExpiry"]
 
 
 def test_get_snacks_with_votes():
     snacks = get_snacks()
-    assert isinstance(snacks, list)
-    novote_snack_count = len(snacks)
+    assert isinstance(snacks, dict)
+    total_snacks = len(snacks["permanent"]) + len(snacks["suggestedCurrent"]) + len(snacks["suggestedExpired"])
+
 
     user = create_user('me', 'me')
 
     snack_id = None
-    for snack in snacks:
-        if snack.optional:
-            snack_id = snack.id
-
-    if snack_id:
-        add_vote(user.id, snack_id)
-        new_snacks = get_snacks()
-        # make sure length did not change
-        assert len(new_snacks) == novote_snack_count
-        # make sure our snack id has a vote count of one
-        voted_snack = [x for x in new_snacks if x.id == snack_id][0]
-        assert voted_snack.votes == 1
+    if len(snacks["suggestedCurrent"]) > 0:
+        snack_id = snacks["suggestedCurrent"]["id"]
     else:
-        add_snack("fruit by the foot", "super america")
-        raise Exception("rerun the tests")
+        new_snack = add_snack("fruit by the foot", "super america")
+        snack_id = new_snack.id
+
+    add_vote(user.id, snack_id)
+    new_snacks = get_snacks()
+    new_total_snacks = len(snacks["permanent"]) + len(snacks["suggestedCurrent"]) + len(snacks["suggestedExpired"])
+    # make sure length did not change
+    assert new_total_snacks == total_snacks
+    # make sure our snack id has a vote count of one
+    voted_snack = [x for x in new_snacks["suggestedCurrent"] if x["id"] == snack_id][0]
+    assert voted_snack["votes"] == 1

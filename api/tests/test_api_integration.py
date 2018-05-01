@@ -90,7 +90,7 @@ def test_create_vote_on_snack():
     )
     snacks = res.json()["data"]
 
-    fruit_snacks = [x for x in snacks if x["name"] == "fruit by the foot"][0]
+    fruit_snacks = [x for x in snacks["suggestedCurrent"] if x["name"] == "fruit by the foot"][0]
     # vote for the snack
     # consume allowed votes
     for i in range(properties.max_votes):

@@ -19,5 +19,6 @@ Base = declarative_base()
 # not very pep8 but don't want to define everything in one file
 from snacks.models.users import User
 from snacks.models.vote import Vote
+from snacks.models.snacks import Snack
 
 Base.metadata.create_all(engine)

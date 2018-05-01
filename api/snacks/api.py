@@ -13,8 +13,7 @@ from snacks.errors import (
     ApiNotAvailableException,
     VotesExceededException
 )
-from snacks import properties
-from snacks import SnackEncoder
+from snacks import properties, DateTimeEncoder
 from snacks.auth import validate_token, generate_token
 
 
@@ -147,7 +146,7 @@ class SnacksResource(object):
             resp.body = json.dumps({
                 "status": "ok",
                 "data": snacks
-            }, cls=SnackEncoder)
+            }, cls=DateTimeEncoder)
         except ApiNotAvailableException:
             resp.status = falcon.HTTP_503
             resp.body = json.dumps({
@@ -183,8 +182,8 @@ class SnacksResource(object):
             new_snack: Snack = add_snack(snack["name"], snack["location"])
             resp.body = json.dumps({
                 "status": "ok",
-                "data": new_snack.__dict__()
-            })
+                "data": new_snack.to_dict()
+            }, cls=DateTimeEncoder)
 
         except AuthorizationError:
             resp.status = falcon.HTTP_503

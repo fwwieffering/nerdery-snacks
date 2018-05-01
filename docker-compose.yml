@@ -4,19 +4,29 @@ services:
     image: postgres:9.6
     ports:
       - 5432:5432
-    network_mode: host
 
   snacks-api:
     image: snacks-api
     build:
-      context: .
+      context: ./api/
       dockerfile: Dockerfile
     # put the secret key for the snack api here
-    # environment:
-    #   - SECRET_KEY=some secret
+    environment:
+      - DB_HOST=database
+      - SNACKS_API_KEY=7ccba3d4-90fa-494b-92e5-2035e42e8d22
     ports:
       - 5050:5050
     volumes:
-      - ./:/work/
-    entrypoint: ./wait_for_it.sh localhost:5432 -- gunicorn -b 0.0.0.0:5050 snacks.api:app --reload
-    network_mode: host
+      - ./api:/work/
+    entrypoint: ./wait_for_it.sh database:5432 -- gunicorn -b 0.0.0.0:5050 snacks.api:app --reload
+
+  snacks-ui:
+    image: snacks-ui
+    build:
+      context: ./ui/
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - ./ui/src:/usr/src/app/src/
+      - ./ui/public:/usr/src/app/public/

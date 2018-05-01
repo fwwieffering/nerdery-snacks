@@ -4,7 +4,7 @@ Basic snack api/ui. Users can create accounts then suggest + vote on snacks. WIP
 ### running the api + UI
 Requirements:
   - docker and docker-compose
-  - secret key for snacks api (insert into docker-compose.yml)
+  - secret key for snacks api (insert into docker-compose.yml environment variables)
 
 then run `make compose`. There is a race condition for the database / api that [wait_for_it.sh](api/wait_for_it.sh) should solve but it isn't consistent. If it fails to come up, simply run `make compose` again
 

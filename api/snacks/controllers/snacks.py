@@ -1,8 +1,7 @@
 import requests
 import json
 import datetime
-from sqlalchemy import func, or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 
 from snacks import properties
 from snacks.utils import get_next_month
@@ -37,7 +36,6 @@ def get_snacks_remote() -> dict:
     # check for service being down
     if res.status_code >= 500:
         raise ApiNotAvailableException
-
 
     snax: list = res.json()
     final_snacks: dict = {}
@@ -134,7 +132,8 @@ def get_snacks() -> dict:
     # add remaining snax (no votes) to final
     for k, v in snax.items():
         if v.optional:
-            if v.suggestionExpiry  and v.suggestionExpiry > datetime.datetime.now():
+            now = datetime.datetime.now()
+            if v.suggestionExpiry and v.suggestionExpiry > now:
                 snacks_suggested_valid.append(v.to_dict())
             else:
                 snacks_suggested_expired.append(v.to_dict())
@@ -176,20 +175,22 @@ def add_snack(name: str, location: str) -> Snack:
         )
 
     # check for conflicts
-    elif res.status_code  == 401:
+    elif res.status_code == 401:
         raise BadRequestError(res.json())
 
     # check for service being down
     elif res.status_code >= 500:
         raise ApiNotAvailableException
 
-    # 409 is returned when snack already exists. However, I still want to update
+    # 409 is returned when snack already exists.
+    # However, I still want to update
     # the suggestionExpiry if its null or not the current month
     elif res.status_code == 409:
         session = Session()
         currentSnack = session.query(
                 Snack
-            ).filter(Snack.name == name
+            ).filter(
+                Snack.name == name
             ).filter(Snack.suggestionExpiry > datetime.datetime.now()).first()
 
         # snack exists in db with a valid suggestion month, it has already been

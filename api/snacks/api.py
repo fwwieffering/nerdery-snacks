@@ -229,6 +229,7 @@ class SnacksResource(object):
                 "error": "token not tied to user"
             })
 
+
 class VoteResource(object):
     """
     Handles addition of votes

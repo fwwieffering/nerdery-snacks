@@ -8,7 +8,7 @@ def generate_token(user_id: int) -> str:
     """
     Generates a JWT with username encoded, encrypted with the secret key
     """
-    expiration =  datetime.datetime.now() + datetime.timedelta(days=7)
+    expiration = datetime.datetime.now() + datetime.timedelta(days=7)
     encoded = jwt.encode(
         {
             "userid": user_id,

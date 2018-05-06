@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 
 from snacks.db import Base
 
+
 class Snack(Base):
     """
     Snacks model. Deserialized from JSON object of format

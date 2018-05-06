@@ -1,5 +1,5 @@
 from snacks.db import Session, Base, engine
-from snacks.controllers.users import create_user, verify_user_password, get_user_votes
+from snacks.controllers.users import create_user, verify_user_password, get_user_votes, check_user_suggestion, set_user_suggestion
 from snacks.models.users import User
 from snacks.errors import UserAlreadyExistsException, UserNotFoundException
 
@@ -57,3 +57,17 @@ def test_get_user_votes():
     vote_count = get_user_votes(user.id)
     # should be 0 since no votes added
     assert vote_count == 0
+
+
+def test_user_suggestion():
+    user = create_user('test_user', 'test_password')
+
+    can_suggest = check_user_suggestion(user.id)
+
+    assert can_suggest
+
+    set_user_suggestion(user.id)
+
+    cannot_suggest = check_user_suggestion(user.id)
+
+    assert cannot_suggest == False

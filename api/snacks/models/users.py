@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
 
 from snacks.db import Base
 
@@ -17,3 +17,5 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True)
     password_hash = Column(String)
+    # date after which suggestion can be made
+    suggestion_expiry = Column(DateTime)

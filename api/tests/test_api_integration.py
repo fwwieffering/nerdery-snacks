@@ -39,6 +39,15 @@ def test_login_integration():
     assert res.ok
     assert body["data"]["token"]
 
+    # test that the max votes are remaining
+    res = requests.get(
+        "http://localhost:5050/vote",
+        headers={"Authorization": "Bearer {}".format(body["data"]["token"])}
+    )
+    print(res.content.decode('utf-8'))
+    assert res.ok
+    assert res.json()["data"]["remaining_votes"] == properties.max_votes
+
     # try incorrect password
     res = requests.post(
         "http://localhost:5050/login",
@@ -112,3 +121,22 @@ def test_create_vote_on_snack():
     assert bad_res.status_code == 400
     error = body["error"]
     assert error == "Maximum votes for period exceeded"
+
+
+def test_suggestions_limited():
+    res = requests.post(
+        "http://localhost:5050/login",
+        data=json.dumps({"username": "integration_user", "password": "something"})
+    )
+    token = res.json()["data"]["token"]
+
+    # user has already suggested snack, should err
+    res = requests.post(
+        "http://localhost:5050/snacks",
+        headers={"Authorization": "Bearer {}".format(token)},
+        data=json.dumps({"name": "fruit by the foot", "location": "super america"})
+    )
+
+    response = res.json()
+
+    assert response["error"] == "can only suggest one snack per month"

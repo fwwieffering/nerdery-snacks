@@ -5,6 +5,7 @@ from snacks.errors import UserAlreadyExistsException, UserNotFoundException
 from snacks.db import Session
 from snacks.models.users import User
 from snacks.models.vote import Vote
+from snacks import properties
 
 
 def create_user(username: str, password: str) -> User:
@@ -102,3 +103,43 @@ def get_user_votes(user_id: int) -> int:
     session.close()
 
     return user_votes
+
+
+def check_user_suggestion(user_id: int) -> bool:
+    """
+    Checks whether the user has made their alotted suggestions.
+
+    Raises:
+        - UserNotFoundException if user id does not exist
+
+    Returns:
+        True if user can make suggestion, otherwise false
+    """
+    user = get_user_by_id(user_id)
+
+    if not user.suggestion_expiry:
+        return True
+
+    if (datetime.datetime.now() > user.suggestion_expiry):
+        return True
+
+    return False
+
+
+def set_user_suggestion(user_id: int):
+    """
+    sets user suggestion expiry to the end of the alotted period
+
+    Raises:
+        - UserNotFoundException if user id does not exist
+
+    """
+    session = Session()
+
+    user = get_user_by_id(user_id)
+
+    user.suggestion_expiry = properties.vote_expiration()
+
+    session.merge(user)
+    session.commit()
+    session.close()

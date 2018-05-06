@@ -1,7 +1,13 @@
 import falcon
 import json
 
-from snacks.controllers.users import create_user, verify_user_password
+from snacks.controllers.users import (
+    create_user,
+    verify_user_password,
+    get_user_votes,
+    check_user_suggestion,
+    set_user_suggestion
+)
 from snacks.controllers.snacks import get_snacks, add_snack
 from snacks.controllers.votes import add_vote
 from snacks.models.snacks import Snack
@@ -166,9 +172,10 @@ class SnacksResource(object):
 
     def on_post(self, req, resp):
         """
-        Creates new snack
+        Creates new snack if user has not already suggested a snack
         """
         snack = req.media
+        token = req.auth.split("Bearer ")[-1]
 
         if not snack or (not snack.get("name") or not snack.get("location")):
             resp.status = falcon.HTTP_400
@@ -179,11 +186,24 @@ class SnacksResource(object):
             return
 
         try:
-            new_snack: Snack = add_snack(snack["name"], snack["location"])
-            resp.body = json.dumps({
-                "status": "ok",
-                "data": new_snack.to_dict()
-            }, cls=DateTimeEncoder)
+            user_info = validate_token(token)
+            can_suggest = check_user_suggestion(user_info["userid"])
+
+            if can_suggest:
+                # set snack expiration
+                set_user_suggestion(user_info["userid"])
+                new_snack: Snack = add_snack(snack["name"], snack["location"])
+                resp.body = json.dumps({
+                    "status": "ok",
+                    "data": new_snack.to_dict()
+                }, cls=DateTimeEncoder)
+
+            else:
+                resp.body = json.dumps({
+                    "status": "error",
+                    "error": "can only suggest one snack per month"
+                })
+                resp.status = falcon.HTTP_400
 
         except AuthorizationError:
             resp.status = falcon.HTTP_503
@@ -202,13 +222,43 @@ class SnacksResource(object):
                 "error": str(e)
             })
 
+        except UserNotFoundException:
+            resp.status = falcon.HTTP_401
+            resp.body = json.dumps({
+                "status": "error",
+                "error": "token not tied to user"
+            })
 
 class VoteResource(object):
     """
     Handles addition of votes
     """
 
+    def on_get(self, req, resp):
+        """
+        returns remaining votes for user
+        """
+        token = req.auth.split("Bearer ")[-1]
+        try:
+            user_info = validate_token(token)
+            total_votes = get_user_votes(user_info["userid"])
+            remaining_votes = properties.max_votes - total_votes
+
+            resp.body = json.dumps({
+                "status": "ok",
+                "data": {"remaining_votes": remaining_votes}
+            })
+        except UserNotFoundException:
+            resp.status = falcon.HTTP_401
+            resp.body = json.dumps({
+                "status": "error",
+                "error": "token not tied to user"
+            })
+
     def on_post(self, req, resp):
+        """
+        creates vote
+        """
         vote = req.media
 
         if not vote or not vote.get("snack_id"):
@@ -218,11 +268,11 @@ class VoteResource(object):
                 "error": "json body containing 'snack_id' is required"
             })
 
-        # get user id from token
-        token = req.auth.split("Bearer ")[-1]
-        user_info = validate_token(token)
-
         try:
+            # get user id from token
+            token = req.auth.split("Bearer ")[-1]
+            user_info = validate_token(token)
+
             total_votes = add_vote(user_info["userid"], vote["snack_id"])
             remaining_votes = properties.max_votes - total_votes
 
@@ -232,6 +282,14 @@ class VoteResource(object):
                     "remaining_votes": remaining_votes
                 }
             })
+
+        except UserNotFoundException:
+            resp.status = falcon.HTTP_401
+            resp.body = json.dumps({
+                "status": "error",
+                "error": "token not tied to user"
+            })
+
         except VotesExceededException:
             resp.status = falcon.HTTP_400
             resp.body = json.dumps({

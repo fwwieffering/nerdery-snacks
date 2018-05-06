@@ -48,6 +48,14 @@ export function sendVote(detail) {
   }
 }
 
+export const GET_VOTE = 'GET_VOTE'
+
+export function getVote(detail) {
+  return {
+    type: GET_VOTE,
+    ...detail
+  }
+}
 
 export function doCreateUser(user) {
   return function(dispatch) {
@@ -122,6 +130,30 @@ export function doGetSnacks() {
         dispatch(getSnacks({status: 'success', data: json.data}))
       }
     }))
+  }
+}
+
+// theres no error handling around this one b/c I got lazy
+export function doGetVote(snack) {
+  return function(dispatch) {
+    // check if token is in session storage, or redirect to login
+    var token = sessionStorage.getItem('token')
+    if (!token) {
+      dispatch(push('/login'))
+    }
+    return fetch(API_URL + 'vote',{
+      method: 'GET',
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    }).then(res => res.json()
+    .then(function(json) {
+      console.log(json)
+    if (res.ok) {
+      dispatch(getVote({status: 'success', data: json.data}))
+    }
+  }))
   }
 }
 

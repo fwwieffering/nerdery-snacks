@@ -94,7 +94,7 @@ class Suggest extends React.Component {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.props.clearSnacksError} color="primary" autoFocus>
+            <Button onClick={this.props.clearSuggestError} color="primary" autoFocus>
               OK
             </Button>
           </DialogActions>

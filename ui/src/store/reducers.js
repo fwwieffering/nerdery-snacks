@@ -5,6 +5,7 @@ import {
   USER_LOGIN,
   GET_SNACKS,
   SEND_VOTE,
+  GET_VOTE,
   SEND_SNACK
 } from './actions'
 
@@ -34,6 +35,14 @@ function vote(state = {inprocess: false, error: null, remaining: null}, action) 
         return {
           ...state,
           error: null
+        }
+      }
+      break
+    case GET_VOTE:
+      if (action.status === 'success') {
+        return {
+          ...state,
+          remaining: action.data.remaining_votes
         }
       }
       break

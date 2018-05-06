@@ -13,7 +13,7 @@ import Dialog, {
 } from 'material-ui/Dialog';
 import VoteIcon from '@material-ui/icons/BookmarkBorder'
 
-import {doGetSnacks, getSnacks, doSendVote, sendVote} from './store/actions'
+import {doGetSnacks, getSnacks, doSendVote, sendVote, doGetVote} from './store/actions'
 
 const styles = theme => ({
   root: {
@@ -29,6 +29,7 @@ const styles = theme => ({
 class VoteTable extends React.Component {
   constructor(props) {
     super(props)
+    this.props.getUserVotes()
     this.props.handleGetSnacks()
   }
 
@@ -92,7 +93,6 @@ class VoteTable extends React.Component {
                 <TableRow>
                   <TableCell>Name</TableCell>
                   <TableCell numeric>Purchase Count</TableCell>
-                  <TableCell>Last Purchase Date</TableCell>
                   <TableCell>Purchase Location</TableCell>
                 </TableRow>
               </TableHead>
@@ -102,7 +102,6 @@ class VoteTable extends React.Component {
                     <TableRow key={n.id}>
                       <TableCell>{n.name}</TableCell>
                       <TableCell numeric>{n.purchaseCount}</TableCell>
-                      <TableCell>{n.lastPurchaseDate}</TableCell>
                       <TableCell>{n.purchaseLocations}</TableCell>
                     </TableRow>
                   );
@@ -176,7 +175,8 @@ const mapDispatchToProps = (dispatch) => {
     handleGetSnacks: () => dispatch(doGetSnacks()),
     clearSnacksError: () => dispatch(getSnacks({status: 'clearError'})),
     handleVote: (snack) => dispatch(doSendVote(snack)),
-    clearVoteError: () => dispatch(sendVote({status: 'clearError'}))
+    clearVoteError: () => dispatch(sendVote({status: 'clearError'})),
+    getUserVotes: () => dispatch(doGetVote())
   }
 }
 

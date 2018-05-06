@@ -1,5 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 import datetime
+import bcrypt
 
 from snacks.errors import UserAlreadyExistsException, UserNotFoundException
 from snacks.db import Session
@@ -17,8 +18,10 @@ def create_user(username: str, password: str) -> User:
     :return: User
     """
     session = Session()
-    # TODO: hash password
-    new_user: User = User(username=username, password_hash=password)
+
+    hash_pw = bcrypt.hashpw(
+        password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    new_user: User = User(username=username, password_hash=hash_pw)
     # TODO: handle generic sql errors
     try:
         session.add(new_user)
@@ -46,8 +49,8 @@ def verify_user_password(username: str, password: str) -> bool:
     session = Session()
     user: User = session.query(User).filter(User.username == username).first()
 
-    # TODO: hash password
-    if user and user.password_hash == password:
+    pw_input = password.encode('utf-8')
+    if user and bcrypt.checkpw(pw_input, user.password_hash.encode('utf-8')):
         session.refresh(user)
         return user.id
 

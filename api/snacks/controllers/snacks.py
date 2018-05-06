@@ -76,7 +76,7 @@ def get_snack_remote_by_name(name: str) -> Snack:
     if res.status_code >= 500:
         raise ApiNotAvailableException
 
-    named_snack = [x for x in res.json() if x["name"] == name]
+    named_snack = [x for x in res.json() if x["name"].lower() == name.lower()]
 
     if len(named_snack) > 0:
         return Snack(**named_snack[0])
@@ -198,13 +198,18 @@ def add_snack(name: str, location: str) -> Snack:
             raise BadRequestError(res.json())
 
         # snack exists in snack api but does not have a valid suggestion month
-        # in db. Add suggestion month to db
+        # in db. Add suggestion month to db if optional snack. Otherwise raise
+        # error
         else:
             extant_snack = get_snack_remote_by_name(name)
-            extant_snack.suggestionExpiry = get_next_month()
-            session.merge(extant_snack)
-            session.commit()
-            return extant_snack
+            if extant_snack.optional:
+                extant_snack.suggestionExpiry = get_next_month()
+                session.merge(extant_snack)
+                session.commit()
+                return extant_snack
+            else:
+                raise BadRequestError(
+                    "Cannot suggest a snack that is always purchased")
 
     else:
         # add to db

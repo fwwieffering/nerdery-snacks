@@ -191,8 +191,8 @@ class SnacksResource(object):
 
             if can_suggest:
                 # set snack expiration
-                set_user_suggestion(user_info["userid"])
                 new_snack: Snack = add_snack(snack["name"], snack["location"])
+                set_user_suggestion(user_info["userid"])
                 resp.body = json.dumps({
                     "status": "ok",
                     "data": new_snack.to_dict()
